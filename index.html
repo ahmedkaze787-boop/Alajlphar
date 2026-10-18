@@ -1,0 +1,111 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>صيدلية العجلان</title>
+<style>
+body{margin:0;font-family:Arial;background:#f1f7f4;color:#263b33}
+header{background:#087f65;color:white;text-align:center;padding:25px 10px}
+main{max-width:900px;margin:auto;padding:15px}
+input,textarea{width:100%;padding:12px;margin:8px 0;border:1px solid #ccc;border-radius:8px;box-sizing:border-box;font-size:16px}
+.products{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.card,.cart{background:white;padding:13px;border-radius:12px;box-shadow:0 2px 8px #0001}
+.card{text-align:center}
+.emoji{font-size:38px}
+.price{color:#087f65;font-weight:bold;margin:12px 0}
+button{border:0;border-radius:8px;padding:11px;cursor:pointer;font-size:15px}
+.add,.send{background:#087f65;color:white;width:100%}
+.send{background:#159447;margin-top:12px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 0;border-bottom:1px solid #eee}
+.qty button{background:#e0f2e9;color:#087f65}
+h2{color:#087f65}
+.total{font-size:20px;font-weight:bold;margin:16px 0}
+footer{text-align:center;padding:20px;color:#66776e}
+</style>
+</head>
+<body>
+<header>
+<h1>💊 صيدلية العجلان</h1>
+<p>صحتكم وعنايتكم أولويتنا</p>
+</header>
+<main>
+<h2>منتجاتنا</h2>
+<input id="search" placeholder="ابحث عن منتج..." oninput="showProducts()">
+<div class="products" id="products"></div>
+
+<section class="cart">
+<h2>🛒 سلة المشتريات</h2>
+<div id="items">السلة فارغة.</div>
+<div class="total" id="total">المجموع: 0 د.ع</div>
+<input id="customer" placeholder="اسم الزبون">
+<input id="phone" placeholder="رقم الهاتف" type="tel">
+<textarea id="address" placeholder="عنوان التوصيل (اختياري)"></textarea>
+<button class="send" onclick="sendOrder()">إرسال الطلب إلى واتساب</button>
+</section>
+</main>
+<footer>صيدلية العجلان © 2026</footer>
+<script>
+// الأسعار والمنتجات التالية أمثلة تجريبية قابلة للتعديل.
+const productsData=[
+{id:1,name:"غسول الوجه",cat:"العناية بالبشرة",price:10000,emoji:"🧴"},
+{id:2,name:"مرطب البشرة",cat:"العناية بالبشرة",price:12000,emoji:"🌿"},
+{id:3,name:"واقي الشمس",cat:"العناية بالبشرة",price:15000,emoji:"☀️"},
+{id:4,name:"شامبو الشعر",cat:"العناية بالشعر",price:9000,emoji:"🧴"},
+{id:5,name:"زيت الشعر",cat:"العناية بالشعر",price:8000,emoji:"🌱"},
+{id:6,name:"معجون الأسنان",cat:"العناية بالأسنان",price:5000,emoji:"🪥"},
+{id:7,name:"كريم الجسم",cat:"العناية بالجسم",price:11000,emoji:"🧴"},
+{id:8,name:"فرشاة الأسنان",cat:"العناية بالأسنان",price:3000,emoji:"😁"}
+];
+let cart={};
+function money(n){return n.toLocaleString("en-US")+" د.ع";}
+function showProducts(){
+let q=document.getElementById("search").value.trim().toLowerCase();
+let found=productsData.filter(p=>(p.name+" "+p.cat).toLowerCase().includes(q));
+document.getElementById("products").innerHTML=found.map(p=>`
+<div class="card">
+<div class="emoji">${p.emoji}</div>
+<h3>${p.name}</h3><p>${p.cat}</p>
+<div class="price">${money(p.price)}</div>
+<button class="add" onclick="add(${p.id})">أضف إلى السلة</button>
+</div>`).join("")||"<p>لا توجد منتجات.</p>";
+}
+function add(id){cart[id]=(cart[id]||0)+1;showCart();}
+function change(id,n){cart[id]=(cart[id]||0)+n;if(cart[id]<=0)delete cart[id];showCart();}
+function showCart(){
+let ids=Object.keys(cart);
+let total=0;
+document.getElementById("items").innerHTML=ids.length?ids.map(id=>{
+let p=productsData.find(x=>x.id===Number(id)),qty=cart[id];
+total+=p.price*qty;
+return `<div class="row"><span>${p.name}<br>${money(p.price)} × ${qty}</span>
+<span class="qty"><button onclick="change(${id},-1)">−</button>
+${qty}<button onclick="change(${id},1)">+</button></span></div>`;
+}).join(""):"السلة فارغة.";
+document.getElementById("total").textContent="المجموع: "+money(total);
+}
+function sendOrder(){
+let ids=Object.keys(cart);
+if(!ids.length){alert("أضف منتجاً إلى السلة أولاً.");return;}
+let name=document.getElementById("customer").value.trim();
+if(!name){alert("يرجى كتابة اسم الزبون.");return;}
+let phone=document.getElementById("phone").value.trim();
+let address=document.getElementById("address").value.trim();
+let total=0;
+let lines=ids.map(id=>{
+let p=productsData.find(x=>x.id===Number(id));
+total+=p.price*cart[id];
+return p.name+" × "+cart[id]+" = "+money(p.price*cart[id]);
+});
+let msg="طلب جديد - صيدلية العجلان\nالاسم: "+name+
+"\nالهاتف: "+(phone||"غير مذكور")+
+"\nالعنوان: "+(address||"غير مذكور")+
+"\n\nالمنتجات:\n"+lines.join("\n")+
+"\n\nالمجموع: "+money(total);
+window.location.href="https://wa.me/9647717485796?text="+encodeURIComponent(msg);
+}
+showProducts();showCart();
+</script>
+</body>
+</html>
